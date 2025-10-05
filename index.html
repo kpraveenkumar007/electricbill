@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TNEB Bill Portal Slab Billing</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root { --primary:#0066cc; --secondary:#ff6600; --bg:#f7f9fc; --card:#fff; --accent:#ffcc00; }
+* { box-sizing:border-box; margin:0; padding:0; font-family:'Roboto',sans-serif; }
+body { background:var(--bg); color:#0f172a; }
+header { background:var(--primary); color:white; padding:20px; border-radius:0 0 20px 20px; display:flex; align-items:center; justify-content:space-between; }
+header img { height:60px; }
+header h1 { font-size:24px; margin-left:16px; }
+.container { max-width:1200px; margin:20px auto; padding:0 20px; display:flex; gap:20px; flex-wrap:wrap; }
+.card { background:var(--card); border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,0.1); padding:20px; flex:1; min-width:320px; text-align:center; }
+input, select, button { padding:10px; border-radius:8px; border:1px solid #ddd; font-size:14px; width:100%; margin-top:6px; }
+button { background:var(--secondary); color:white; cursor:pointer; transition:transform 0.2s; margin-top:10px; }
+button:hover { transform:scale(1.05); }
+button.secondary { background:var(--accent); color:#000; }
+.receipt { white-space: pre-wrap; background:#f3f5f8; padding:12px; border-radius:8px; margin-top:12px; font-family:monospace; text-align:left; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { padding:8px; border:1px solid #ddd; text-align:left; }
+th { background:var(--primary); color:#fff; }
+</style>
+</head>
+<body>
+
+<header>
+<div style="display:flex; align-items:center;">
+<img src="https://i1.wp.com/www.winmeen.com/wp-content/uploads/2017/06/2000px-TamilNadu_Logo.svg_-273x300.png?resize=273%2C300" alt="TNEB Logo">
+<h1>TNEB Online Payment Portal</h1>
+</div>
+</header>
+
+<div class="container">
+<section class="card">
+<h2>Quick Pay</h2>
+<input id="consumerInput" type="text" placeholder="Enter Consumer ID">
+<input id="consumerName" type="text" placeholder="Name" readonly>
+<input id="consumerPhone" type="text" placeholder="Phone" readonly>
+<input id="consumerAddress" type="text" placeholder="Address" readonly>
+<input id="prevReading" type="number" placeholder="Previous Reading" readonly>
+<input id="curReading" type="number" placeholder="Current Reading" readonly>
+<button id="generateBtn">Generate Bill</button>
+<div id="results"></div>
+</section>
+
+<aside class="card">
+<h3>Payment Panel</h3>
+<div id="selectedInfo">No bill generated yet.</div>
+<select id="methodSelect">
+<option value="UPI">UPI</option>
+<option value="Card">Debit/Credit Card</option>
+<option value="NetBank">Net Banking</option>
+</select>
+<div style="margin-top:10px;">
+<button id="payBtn" disabled>Pay Bill</button>
+<button id="downloadBtn" class="secondary" disabled>Download Receipt</button>
+</div>
+<div id="receiptWrap"></div>
+</aside>
+</div>
+
+<footer>&copy; 2025 Tamil Nadu Electricity Board - Demo Portal</footer>
+
+<script>
+// Demo consumer database with higher readings
+const DEMO_CONSUMERS = {
+  "10020130": {name:"Siddarth", phone:"9876543210", address:"Chennai, TN", prev:350, cur:420},
+  "10020131": {name:"Akansha", phone:"9123456780", address:"Coimbatore, TN", prev:480, cur:560},
+  "10020132": {name:"Charumathi", phone:"9001122334", address:"Madurai, TN", prev:290, cur:365},
+  "10020133": {name:"Praveen", phone:"9988776655", address:"Salem, TN", prev:400, cur:480}
+};
+
+let currentBill = null;
+const consumerInput = document.getElementById("consumerInput");
+const consumerName = document.getElementById("consumerName");
+const consumerPhone = document.getElementById("consumerPhone");
+const consumerAddress = document.getElementById("consumerAddress");
+const prevReading = document.getElementById("prevReading");
+const curReading = document.getElementById("curReading");
+const resultsEl = document.getElementById("results");
+const selectedInfo = document.getElementById("selectedInfo");
+const payBtn = document.getElementById("payBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const receiptWrap = document.getElementById("receiptWrap");
+
+// Slab rates
+const SLABS = [
+  { upto: 100, rate: 3.50 },
+  { upto: 200, rate: 4.50 },
+  { upto: 500, rate: 6.00 },
+  { upto: Infinity, rate: 7.50 }
+];
+
+// Auto-fill consumer data
+consumerInput.addEventListener("blur", ()=>{
+  const id = consumerInput.value.trim();
+  if(DEMO_CONSUMERS[id]){
+    const c = DEMO_CONSUMERS[id];
+    consumerName.value=c.name;
+    consumerPhone.value=c.phone;
+    consumerAddress.value=c.address;
+    prevReading.value=c.prev;
+    curReading.value=c.cur;
+    resultsEl.innerHTML="";
+    selectedInfo.textContent="Consumer details auto-filled.";
+  } else {
+    consumerName.value="";
+    consumerPhone.value="";
+    consumerAddress.value="";
+    prevReading.value="";
+    curReading.value="";
+    resultsEl.innerHTML="<p style='color:red;'>Consumer ID not found.</p>";
+    selectedInfo.textContent="No bill generated yet.";
+  }
+});
+
+// Calculate bill using slabs
+function calcBill(units){
+  let remaining = units;
+  let total = 0;
+  let lower = 0;
+  let breakdown = [];
+  for(let s of SLABS){
+    let limit = s.upto - lower;
+    let used = Math.min(remaining, limit);
+    if(used>0){
+      let amt = used*s.rate;
+      breakdown.push({ slab:`${lower+1}-${s.upto}`, units:used, rate:s.rate, amount:amt });
+      total += amt;
+      remaining -= used;
+    }
+    lower = s.upto;
+    if(remaining <= 0) break;
+  }
+  return {total, breakdown};
+}
+
+// Generate bill
+document.getElementById("generateBtn").addEventListener("click", ()=>{
+  const id = consumerInput.value.trim();
+  const name = consumerName.value;
+  const phone = consumerPhone.value;
+  const address = consumerAddress.value;
+  const prev = parseFloat(prevReading.value);
+  const cur = parseFloat(curReading.value);
+
+  if(!id || !name || !phone || !address || isNaN(prev) || isNaN(cur)){
+    resultsEl.innerHTML="<p style='color:red;'>Please enter valid consumer data.</p>";
+    return;
+  }
+  if(cur<prev){ resultsEl.innerHTML="<p style='color:red;'>Current reading cannot be less than previous.</p>"; return; }
+
+  const units = cur-prev;
+  const {total, breakdown} = calcBill(units);
+
+  let table=`<table><thead><tr><th>Slab</th><th>Units</th><th>Rate</th><th>Amount</th></tr></thead><tbody>`;
+  breakdown.forEach(b=>{ table += `<tr><td>${b.slab}</td><td>${b.units}</td><td>₹${b.rate.toFixed(2)}</td><td>₹${b.amount.toFixed(2)}</td></tr>`; });
+  table += `</tbody></table><p><b>Total Bill: ₹${total.toFixed(2)}</b></p><p>Units Consumed: ${units}</p>`;
+  resultsEl.innerHTML = table;
+
+  currentBill={id,name,phone,address,prev,cur,units,total,breakdown};
+  selectedInfo.textContent=`Bill ready for ${name} (${id}) — ${units} units, ₹${total.toFixed(2)}`;
+  payBtn.disabled=false;
+  downloadBtn.disabled=false;
+});
+
+// Pay bill
+payBtn.addEventListener("click", ()=>{
+  if(!currentBill) return;
+  let receiptText =
+`RECEIPT
+-------------------------
+Consumer ID: ${currentBill.id}
+Name: ${currentBill.name}
+Phone: ${currentBill.phone}
+Address: ${currentBill.address}
+Previous Reading: ${currentBill.prev}
+Current Reading: ${currentBill.cur}
+Units Consumed: ${currentBill.units}
+-------------------------
+Total Amount: ₹${currentBill.total.toFixed(2)}
+Status: Paid
+-------------------------
+Thank you for your payment!`;
+  receiptWrap.innerHTML=`<pre class='receipt'>${receiptText}</pre>`;
+});
+
+// Download PDF receipt
+downloadBtn.addEventListener("click", ()=>{
+  if(!currentBill) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 20;
+  doc.setFontSize(14);
+  doc.text("TAMIL NADU ELECTRICITY BOARD - RECEIPT", 20, y);
+  y += 10;
+  doc.setFontSize(11);
+  const lines = [
+    `Consumer ID: ${currentBill.id}`,
+    `Name: ${currentBill.name}`,
+    `Phone: ${currentBill.phone}`,
+    `Address: ${currentBill.address}`,
+    `Previous Reading: ${currentBill.prev}`,
+    `Current Reading: ${currentBill.cur}`,
+    `Units Consumed: ${currentBill.units}`,
+    ``,
+    `Breakdown by Slabs:`
+  ];
+  currentBill.breakdown.forEach(b=>{
+    lines.push(`${b.slab}: ${b.units} units x ₹${b.rate.toFixed(2)} = ₹${b.amount.toFixed(2)}`);
+  });
+  lines.push(``);
+  lines.push(`Total Amount: ₹${currentBill.total.toFixed(2)}`);
+  lines.push(`Status: Paid`);
+  lines.push(``);
+  lines.push(`Thank you for your payment!`);
+  lines.forEach(line=>{ y += 8; doc.text(line,20,y); });
+  doc.save(`TNEB_Receipt_${currentBill.id}.pdf`);
+});
+</script>
+
+</body>
+</html>
