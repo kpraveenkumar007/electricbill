@@ -3,26 +3,99 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TNEB Bill Portal Slab Billing</title>
+<title>TNEB Bill Portal - Light Mode</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-:root { --primary:#0066cc; --secondary:#ff6600; --bg:#f7f9fc; --card:#fff; --accent:#ffcc00; }
-* { box-sizing:border-box; margin:0; padding:0; font-family:'Roboto',sans-serif; }
-body { background:var(--bg); color:#0f172a; }
-header { background:var(--primary); color:white; padding:20px; border-radius:0 0 20px 20px; display:flex; align-items:center; justify-content:space-between; }
+body {
+  margin:0; font-family:'Roboto',sans-serif;
+  background: url('https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcThpNDVjOWswcXBlaGcwNGRha3I5Yng4MmJrdGNsaXk0YTBlMXBpdSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/7TZeMmo1VDJFC/giphy.webp') no-repeat center center fixed;
+  background-size: cover;
+  color:#0f172a;
+}
+
+header {
+  background:#0066cc;
+  color:white;
+  padding:20px;
+  border-radius:0 0 20px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
 header img { height:60px; }
 header h1 { font-size:24px; margin-left:16px; }
-.container { max-width:1200px; margin:20px auto; padding:0 20px; display:flex; gap:20px; flex-wrap:wrap; }
-.card { background:var(--card); border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,0.1); padding:20px; flex:1; min-width:320px; text-align:center; }
-input, select, button { padding:10px; border-radius:8px; border:1px solid #ddd; font-size:14px; width:100%; margin-top:6px; }
-button { background:var(--secondary); color:white; cursor:pointer; transition:transform 0.2s; margin-top:10px; }
+
+.container {
+  max-width:1200px;
+  margin:20px auto;
+  padding:0 20px;
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+.card {
+  background: #fff;
+  color:#0f172a;
+  border-radius:16px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.1);
+  padding:20px;
+  flex:1;
+  min-width:320px;
+  text-align:center;
+}
+
+input, select, button {
+  padding:10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  width:100%;
+  font-size:14px;
+}
+button {
+  background:#ff6600;
+  color:white;
+  cursor:pointer;
+  transition:transform 0.2s;
+  margin-top:10px;
+}
 button:hover { transform:scale(1.05); }
-button.secondary { background:var(--accent); color:#000; }
-.receipt { white-space: pre-wrap; background:#f3f5f8; padding:12px; border-radius:8px; margin-top:12px; font-family:monospace; text-align:left; }
-table { width:100%; border-collapse:collapse; margin-top:10px; }
-th, td { padding:8px; border:1px solid #ddd; text-align:left; }
-th { background:var(--primary); color:#fff; }
+button.secondary { background:#ffcc00; color:#000; }
+
+.receipt {
+  white-space: pre-wrap;
+  background:#f3f5f8;
+  color:#0f172a;
+  padding:12px;
+  border-radius:8px;
+  margin-top:12px;
+  font-family:monospace;
+  text-align:left;
+}
+
+#results {
+  background: #f3f5f8;
+  color: #0f172a;
+  padding:12px;
+  border-radius:8px;
+  margin-top:12px;
+}
+#results table { width:100%; border-collapse:collapse; }
+#results th, #results td { border:1px solid #ddd; padding:6px; text-align:left; }
+#results th { background: #0066cc; color:#fff; }
+
+.hidden { display:none; }
+
+footer {
+  text-align:center;
+  margin-top:30px;
+  padding:15px;
+  color:#fff;
+  background:#0066cc;
+  border-radius:10px 10px 0 0;
+}
 </style>
 </head>
 <body>
@@ -36,8 +109,11 @@ th { background:var(--primary); color:#fff; }
 
 <div class="container">
 <section class="card">
-<h2>Quick Pay</h2>
-<input id="consumerInput" type="text" placeholder="Enter Consumer ID">
+<h2>Enter Consumer ID</h2>
+<input id="consumerInput" type="text" placeholder="Consumer ID">
+<button id="enterBtn">Enter</button>
+
+<div id="detailsSection" class="hidden">
 <input id="consumerName" type="text" placeholder="Name" readonly>
 <input id="consumerPhone" type="text" placeholder="Phone" readonly>
 <input id="consumerAddress" type="text" placeholder="Address" readonly>
@@ -45,6 +121,7 @@ th { background:var(--primary); color:#fff; }
 <input id="curReading" type="number" placeholder="Current Reading" readonly>
 <button id="generateBtn">Generate Bill</button>
 <div id="results"></div>
+</div>
 </section>
 
 <aside class="card">
@@ -66,112 +143,89 @@ th { background:var(--primary); color:#fff; }
 <footer>&copy; 2025 Tamil Nadu Electricity Board - Demo Portal</footer>
 
 <script>
-// Demo consumer database with higher readings
-const DEMO_CONSUMERS = {
-  "10020130": {name:"Siddarth", phone:"9876543210", address:"Chennai, TN", prev:350, cur:420},
-  "10020131": {name:"Akansha", phone:"9123456780", address:"Coimbatore, TN", prev:480, cur:560},
-  "10020132": {name:"Charumathi", phone:"9001122334", address:"Madurai, TN", prev:290, cur:365},
-  "10020133": {name:"Praveen", phone:"9988776655", address:"Salem, TN", prev:400, cur:480}
+const DEMO_CONSUMERS={
+  "10020130":{name:"Siddharth", phone:"9876543210", address:"anna nagar,Chennai, TN", prev:350, cur:420},
+  "10020131":{name:"kesav", phone:"9123456780", address:"thandayarpettai,chennai, TN", prev:480, cur:560},
+  "10020132":{name:"Subash", phone:"9001122334", address:"kannadian kudsai,kanchipuram, TN", prev:290, cur:365},
+  "10020133":{name:"Praveen", phone:"9988776655", address:"shennerkuppam,poonamallee, TN", prev:400, cur:480}
 };
 
-let currentBill = null;
-const consumerInput = document.getElementById("consumerInput");
-const consumerName = document.getElementById("consumerName");
-const consumerPhone = document.getElementById("consumerPhone");
-const consumerAddress = document.getElementById("consumerAddress");
-const prevReading = document.getElementById("prevReading");
-const curReading = document.getElementById("curReading");
-const resultsEl = document.getElementById("results");
-const selectedInfo = document.getElementById("selectedInfo");
-const payBtn = document.getElementById("payBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const receiptWrap = document.getElementById("receiptWrap");
+let currentBill=null;
+const consumerInput=document.getElementById("consumerInput");
+const consumerName=document.getElementById("consumerName");
+const consumerPhone=document.getElementById("consumerPhone");
+const consumerAddress=document.getElementById("consumerAddress");
+const prevReading=document.getElementById("prevReading");
+const curReading=document.getElementById("curReading");
+const detailsSection=document.getElementById("detailsSection");
+const resultsEl=document.getElementById("results");
+const selectedInfo=document.getElementById("selectedInfo");
+const payBtn=document.getElementById("payBtn");
+const downloadBtn=document.getElementById("downloadBtn");
+const receiptWrap=document.getElementById("receiptWrap");
 
-// Slab rates
-const SLABS = [
-  { upto: 100, rate: 3.50 },
-  { upto: 200, rate: 4.50 },
-  { upto: 500, rate: 6.00 },
-  { upto: Infinity, rate: 7.50 }
-];
+const SLABS=[{upto:100,rate:3.50},{upto:200,rate:4.50},{upto:500,rate:6.00},{upto:Infinity,rate:7.50}];
 
-// Auto-fill consumer data
-consumerInput.addEventListener("blur", ()=>{
-  const id = consumerInput.value.trim();
-  if(DEMO_CONSUMERS[id]){
-    const c = DEMO_CONSUMERS[id];
+// Enter button
+document.getElementById("enterBtn").addEventListener("click",()=>{
+  const id=consumerInput.value.trim();
+  const c=DEMO_CONSUMERS[id];
+  if(c){
+    detailsSection.classList.remove("hidden");
     consumerName.value=c.name;
     consumerPhone.value=c.phone;
     consumerAddress.value=c.address;
     prevReading.value=c.prev;
     curReading.value=c.cur;
     resultsEl.innerHTML="";
-    selectedInfo.textContent="Consumer details auto-filled.";
-  } else {
-    consumerName.value="";
-    consumerPhone.value="";
-    consumerAddress.value="";
-    prevReading.value="";
-    curReading.value="";
-    resultsEl.innerHTML="<p style='color:red;'>Consumer ID not found.</p>";
-    selectedInfo.textContent="No bill generated yet.";
+    selectedInfo.textContent="Consumer details loaded.";
+  } else{
+    alert("Consumer ID not found!");
+    detailsSection.classList.add("hidden");
   }
 });
+consumerInput.addEventListener("keypress",function(e){if(e.key==="Enter"){document.getElementById("enterBtn").click();}});
 
-// Calculate bill using slabs
+// Calculate bill
 function calcBill(units){
-  let remaining = units;
-  let total = 0;
-  let lower = 0;
-  let breakdown = [];
+  let remaining=units,total=0,lower=0,breakdown=[];
   for(let s of SLABS){
-    let limit = s.upto - lower;
-    let used = Math.min(remaining, limit);
+    let limit=s.upto-lower;
+    let used=Math.min(remaining,limit);
     if(used>0){
-      let amt = used*s.rate;
-      breakdown.push({ slab:`${lower+1}-${s.upto}`, units:used, rate:s.rate, amount:amt });
-      total += amt;
-      remaining -= used;
+      let amt=used*s.rate;
+      breakdown.push({slab:`${lower+1}-${s.upto}`,units:used,rate:s.rate,amount:amt});
+      total+=amt;
+      remaining-=used;
     }
-    lower = s.upto;
-    if(remaining <= 0) break;
+    lower=s.upto;
+    if(remaining<=0) break;
   }
-  return {total, breakdown};
+  return {total,breakdown};
 }
 
 // Generate bill
-document.getElementById("generateBtn").addEventListener("click", ()=>{
-  const id = consumerInput.value.trim();
-  const name = consumerName.value;
-  const phone = consumerPhone.value;
-  const address = consumerAddress.value;
-  const prev = parseFloat(prevReading.value);
-  const cur = parseFloat(curReading.value);
-
-  if(!id || !name || !phone || !address || isNaN(prev) || isNaN(cur)){
-    resultsEl.innerHTML="<p style='color:red;'>Please enter valid consumer data.</p>";
-    return;
-  }
-  if(cur<prev){ resultsEl.innerHTML="<p style='color:red;'>Current reading cannot be less than previous.</p>"; return; }
-
-  const units = cur-prev;
-  const {total, breakdown} = calcBill(units);
-
+document.getElementById("generateBtn").addEventListener("click",()=>{
+  const id=consumerInput.value.trim();
+  const name=consumerName.value, phone=consumerPhone.value, address=consumerAddress.value;
+  const prev=parseFloat(prevReading.value), cur=parseFloat(curReading.value);
+  if(!id||!name||!phone||!address||isNaN(prev)||isNaN(cur)){resultsEl.innerHTML="<p style='color:red;'>Please enter valid data.</p>"; return;}
+  if(cur<prev){resultsEl.innerHTML="<p style='color:red;'>Current reading cannot be less than previous.</p>"; return;}
+  const units=cur-prev;
+  const {total,breakdown}=calcBill(units);
   let table=`<table><thead><tr><th>Slab</th><th>Units</th><th>Rate</th><th>Amount</th></tr></thead><tbody>`;
-  breakdown.forEach(b=>{ table += `<tr><td>${b.slab}</td><td>${b.units}</td><td>₹${b.rate.toFixed(2)}</td><td>₹${b.amount.toFixed(2)}</td></tr>`; });
-  table += `</tbody></table><p><b>Total Bill: ₹${total.toFixed(2)}</b></p><p>Units Consumed: ${units}</p>`;
-  resultsEl.innerHTML = table;
-
+  breakdown.forEach(b=>{table+=`<tr><td>${b.slab}</td><td>${b.units}</td><td>₹${b.rate.toFixed(2)}</td><td>₹${b.amount.toFixed(2)}</td></tr>`});
+  table+=`</tbody></table><p><b>Total Bill: ₹${total.toFixed(2)}</b></p><p>Units Consumed: ${units}</p>`;
+  resultsEl.innerHTML=table;
   currentBill={id,name,phone,address,prev,cur,units,total,breakdown};
   selectedInfo.textContent=`Bill ready for ${name} (${id}) — ${units} units, ₹${total.toFixed(2)}`;
-  payBtn.disabled=false;
-  downloadBtn.disabled=false;
+  payBtn.disabled=false; downloadBtn.disabled=false;
 });
 
 // Pay bill
-payBtn.addEventListener("click", ()=>{
+payBtn.addEventListener("click",()=>{
   if(!currentBill) return;
-  let receiptText =
+  let receiptText=
 `RECEIPT
 -------------------------
 Consumer ID: ${currentBill.id}
@@ -189,8 +243,8 @@ Thank you for your payment!`;
   receiptWrap.innerHTML=`<pre class='receipt'>${receiptText}</pre>`;
 });
 
-// Download PDF receipt
-downloadBtn.addEventListener("click", ()=>{
+// Download PDF
+downloadBtn.addEventListener("click",()=>{
   if(!currentBill) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
