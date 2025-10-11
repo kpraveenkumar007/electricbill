@@ -1,257 +1,542 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TNEB Bill Portal - Light Mode</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TNEB Bill Portal - Demo (AutoPay + Complaints + Smart Meter + Rewards)</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body {
-  margin:0; font-family:'Roboto',sans-serif;
-  background: url('https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcThpNDVjOWswcXBlaGcwNGRha3I5Yng4MmJrdGNsaXk0YTBlMXBpdSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/7TZeMmo1VDJFC/giphy.webp') no-repeat center center fixed;
-  background-size: cover;
-  color:#0f172a;
-}
-
-header {
-  background:#0066cc;
-  color:white;
-  padding:20px;
-  border-radius:0 0 20px 20px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-header img { height:60px; }
-header h1 { font-size:24px; margin-left:16px; }
-
-.container {
-  max-width:1200px;
-  margin:20px auto;
-  padding:0 20px;
-  display:flex;
-  gap:20px;
-  flex-wrap:wrap;
-}
-
-.card {
-  background: #fff;
-  color:#0f172a;
-  border-radius:16px;
-  box-shadow:0 6px 20px rgba(0,0,0,0.1);
-  padding:20px;
-  flex:1;
-  min-width:320px;
-  text-align:center;
-}
-
-input, select, button {
-  padding:10px;
-  margin-top:6px;
-  border-radius:8px;
-  border:1px solid #ddd;
-  width:100%;
-  font-size:14px;
-}
-button {
-  background:#ff6600;
-  color:white;
-  cursor:pointer;
-  transition:transform 0.2s;
-  margin-top:10px;
-}
-button:hover { transform:scale(1.05); }
-button.secondary { background:#ffcc00; color:#000; }
-
-.receipt {
-  white-space: pre-wrap;
-  background:#f3f5f8;
-  color:#0f172a;
-  padding:12px;
-  border-radius:8px;
-  margin-top:12px;
-  font-family:monospace;
-  text-align:left;
-}
-
-#results {
-  background: #f3f5f8;
-  color: #0f172a;
-  padding:12px;
-  border-radius:8px;
-  margin-top:12px;
-}
-#results table { width:100%; border-collapse:collapse; }
-#results th, #results td { border:1px solid #ddd; padding:6px; text-align:left; }
-#results th { background: #0066cc; color:#fff; }
-
-.hidden { display:none; }
-
-footer {
-  text-align:center;
-  margin-top:30px;
-  padding:15px;
-  color:#fff;
-  background:#0066cc;
-  border-radius:10px 10px 0 0;
-}
+  :root { --primary:#0066cc; --accent:#ff6600; --muted:#f3f5f8; --card:#fff; color-scheme: light; }
+  body { margin:0; font-family:'Roboto',sans-serif; background: linear-gradient(180deg,#e6f0ff 0%, #ffffff 100%); color:#0f172a; }
+  header { background:var(--primary); color:white; padding:18px; display:flex; align-items:center; gap:12px; border-radius:0 0 14px 14px; }
+  header img { height:54px; }
+  header h1 { font-size:20px; margin:0; }
+  .topbar { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .container { max-width:1200px; margin:18px auto; padding:12px; display:grid; grid-template-columns: 1fr 360px; gap:18px; }
+  .card { background:var(--card); border-radius:12px; padding:14px; box-shadow:0 8px 24px rgba(12,15,30,0.06); }
+  .small { font-size:13px; color:#3b4253; }
+  input, select, button, textarea { padding:10px; margin-top:8px; border-radius:8px; border:1px solid #ddd; width:100%; font-size:14px; box-sizing:border-box; }
+  button { background:var(--accent); color:white; cursor:pointer; border:none; font-weight:600; }
+  button.secondary { background:#ffcc00; color:#000; }
+  .muted { background:var(--muted); padding:10px; border-radius:8px; }
+  .flex { display:flex; gap:10px; align-items:center; }
+  .col { display:flex; flex-direction:column; gap:8px; }
+  #results { margin-top:10px; background:var(--muted); padding:10px; border-radius:8px; font-family:monospace; text-align:left; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td { border:1px solid #e6e9ee; padding:6px; text-align:left; font-size:13px; }
+  th { background:var(--primary); color:white; font-weight:600; }
+  .receipt { white-space: pre-wrap; background:#f7fafc; padding:12px; border-radius:8px; font-family:monospace; }
+  footer { text-align:center; padding:12px; color:#fff; background:var(--primary); border-radius:10px; margin-top:18px; }
+  /* dashboard small widgets */
+  .widgets { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .widget { flex:1 1 140px; background:#fff; padding:10px; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.05); text-align:center; }
+  .notifications { max-height:160px; overflow:auto; gap:8px; display:flex; flex-direction:column; }
+  .note { background:#fff; padding:8px; border-radius:8px; border-left:4px solid var(--primary); font-size:13px; }
+  .lang-switch { background:#fff; padding:6px 8px; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
+  .right-col { position:sticky; top:18px; align-self:start; }
+  .tog { display:inline-flex; gap:8px; align-items:center; }
+  .chart-canvas { width:100%; height:160px; background:linear-gradient(#ffffff, #f6fbff); border-radius:8px; padding:8px; box-sizing:border-box; }
+  .complaint-row { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px; border-radius:8px; background:#fff; margin-top:6px; }
+  .badge { padding:4px 6px; border-radius:6px; font-size:12px; }
+  .status-open { background:#fff8e6; color:#a07a00; border:1px solid #ffd66b; }
+  .status-closed { background:#e9fff0; color:#0b7a3b; border:1px solid #9ef0af; }
+  @media (max-width:980px){ .container{ grid-template-columns: 1fr; } .right-col{ position:static; } }
 </style>
 </head>
 <body>
 
 <header>
-<div style="display:flex; align-items:center;">
-<img src="https://i1.wp.com/www.winmeen.com/wp-content/uploads/2017/06/2000px-TamilNadu_Logo.svg_-273x300.png?resize=273%2C300" alt="TNEB Logo">
-<h1>TNEB Online Payment Portal</h1>
-</div>
+  <img src="https://i1.wp.com/www.winmeen.com/wp-content/uploads/2017/06/2000px-TamilNadu_Logo.svg_-273x300.png?resize=273%2C300" alt="TNEB">
+  <h1 id="title">TNEB Online Payment Portal</h1>
+
+  <div class="topbar">
+    <div class="lang-switch">
+      <label for="langSelect" class="small" style="margin-right:8px;">Lang</label>
+      <select id="langSelect" style="width:110px;">
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+        <option value="hi">हिन्दी</option>
+      </select>
+    </div>
+    <div class="small">Demo Mode</div>
+  </div>
 </header>
 
 <div class="container">
-<section class="card">
-<h2>Enter Consumer ID</h2>
-<input id="consumerInput" type="text" placeholder="Consumer ID">
-<button id="enterBtn">Enter</button>
 
-<div id="detailsSection" class="hidden">
-<input id="consumerName" type="text" placeholder="Name" readonly>
-<input id="consumerPhone" type="text" placeholder="Phone" readonly>
-<input id="consumerAddress" type="text" placeholder="Address" readonly>
-<input id="prevReading" type="number" placeholder="Previous Reading" readonly>
-<input id="curReading" type="number" placeholder="Current Reading" readonly>
-<button id="generateBtn">Generate Bill</button>
-<div id="results"></div>
-</div>
-</section>
+  <!-- LEFT: MAIN PANEL -->
+  <div class="card">
+    <h2 id="enter_heading">Enter Consumer ID</h2>
 
-<aside class="card">
-<h3>Payment Panel</h3>
-<div id="selectedInfo">No bill generated yet.</div>
-<select id="methodSelect">
-<option value="UPI">UPI</option>
-<option value="Card">Debit/Credit Card</option>
-<option value="NetBank">Net Banking</option>
-</select>
-<div style="margin-top:10px;">
-<button id="payBtn" disabled>Pay Bill</button>
-<button id="downloadBtn" class="secondary" disabled>Download Receipt</button>
-</div>
-<div id="receiptWrap"></div>
-</aside>
+    <div class="col">
+      <input id="consumerInput" type="text" placeholder="Consumer ID">
+      <div class="flex">
+        <button id="enterBtn">Enter</button>
+        <button id="loadDemo" class="secondary">Load Demo Consumer</button>
+      </div>
+    </div>
+
+    <div id="detailsSection" class="col" style="margin-top:12px; display:none;">
+      <div class="flex">
+        <input id="consumerName" type="text" placeholder="Name" readonly>
+        <input id="consumerPhone" type="text" placeholder="Phone" readonly>
+      </div>
+      <input id="consumerAddress" type="text" placeholder="Address" readonly>
+      <div class="flex">
+        <div style="flex:1;">
+          <label class="small">Previous Reading</label>
+          <input id="prevReading" type="number" placeholder="Previous" readonly>
+        </div>
+        <div style="flex:1;">
+          <label class="small">Current Reading</label>
+          <input id="curReading" type="number" placeholder="Current">
+        </div>
+      </div>
+
+      <div class="flex" style="gap:12px;">
+        <button id="generateBtn">Generate Bill</button>
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="smartMeterChk"> <span class="small" id="smartMeterLabel">Connect Smart Meter (Sim)</span>
+        </label>
+      </div>
+
+      <div id="results"></div>
+
+      <hr style="margin:12px 0; border:none; border-top:1px solid #eee;">
+      <h3 id="complaint_heading">Complaint / Feedback</h3>
+      <div class="col">
+        <select id="complaintType">
+          <option value="billing">Billing Error</option>
+          <option value="supply">Power Supply / Outage</option>
+          <option value="meter">Meter Issue</option>
+          <option value="other">Other</option>
+        </select>
+        <textarea id="complaintText" rows="3" placeholder="Brief description..."></textarea>
+        <div class="flex">
+          <button id="submitComplaint">Submit Complaint</button>
+          <button id="viewComplaints" class="secondary">View My Complaints</button>
+        </div>
+        <div id="complaintList" class="muted" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Dashboard / Payment / Notifications -->
+  <aside class="card right-col">
+    <h3 id="panel_heading">Payment Panel & Dashboard</h3>
+
+    <div id="selectedInfo">No bill generated yet.</div>
+
+    <div style="margin-top:10px; text-align:left;">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="autoPayChk"> <span id="autoPayLabel">Enable Auto Payment (Monthly)</span>
+      </label>
+    </div>
+
+    <div style="margin-top:8px;">
+      <select id="methodSelect">
+        <option value="UPI">UPI</option>
+        <option value="Card">Debit/Credit Card</option>
+        <option value="NetBank">Net Banking</option>
+      </select>
+    </div>
+
+    <div style="margin-top:10px;">
+      <div class="flex">
+        <button id="payBtn" disabled>Pay Bill</button>
+        <button id="downloadBtn" class="secondary" disabled>Download Receipt</button>
+      </div>
+    </div>
+
+    <div class="widgets" style="margin-top:12px;">
+      <div class="widget">
+        <div class="small">Total Due</div>
+        <div id="widgetDue">₹0.00</div>
+      </div>
+      <div class="widget">
+        <div class="small">Green Points</div>
+        <div id="widgetPoints">0 pts</div>
+      </div>
+      <div class="widget">
+        <div class="small">Schemes</div>
+        <div id="widgetSchemes">—</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Usage Chart (Past 6 months)</div>
+      <canvas id="usageChart" class="chart-canvas"></canvas>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Notifications</div>
+      <div id="notifications" class="notifications" aria-live="polite"></div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Receipt</div>
+      <div id="receiptWrap"></div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button id="clearStorage" class="secondary">Clear Demo Data</button>
+    </div>
+  </aside>
+
 </div>
 
 <footer>&copy; 2025 Tamil Nadu Electricity Board - Demo Portal</footer>
 
 <script>
-const DEMO_CONSUMERS={
-  "10020130":{name:"Siddharth", phone:"9876543210", address:"anna nagar,Chennai, TN", prev:350, cur:420},
-  "10020131":{name:"kesav", phone:"9123456780", address:"thandayarpettai,chennai, TN", prev:480, cur:560},
-  "10020132":{name:"Subash", phone:"9001122334", address:"kannadian kudsai,kanchipuram, TN", prev:290, cur:365},
-  "10020133":{name:"Praveen", phone:"9988776655", address:"shennerkuppam,poonamallee, TN", prev:400, cur:480}
+/* --------------------------- DEMO DATA & TRANSLATIONS --------------------------- */
+const translations = {
+  en: {
+    title: "TNEB Online Payment Portal",
+    enter_heading: "Enter Consumer ID",
+    complaint_heading: "Complaint / Feedback",
+    panel_heading: "Payment Panel & Dashboard",
+    autoPayLabel: "Enable Auto Payment (Monthly)",
+    smartMeterLabel: "Connect Smart Meter (Sim)",
+    selected_no: "No bill generated yet.",
+    loadDemo: "Load Demo Consumer",
+    submitComplaint: "Submit Complaint",
+    viewComplaints: "View My Complaints",
+    payBtn: "Pay Bill",
+    downloadBtn: "Download Receipt"
+  },
+  ta: {
+    title: "TNEB ஆன்லைன் கட்டண தளம்",
+    enter_heading: "கான்ச்யூமர் ஐடி உள்ளிடவும்",
+    complaint_heading: "பாட்டி / கருத்து",
+    panel_heading: "பணம் களஞ்சியம் மற்றும் டாஷ்போர்டு",
+    autoPayLabel: "தானாக கட்டணம் (மாதாந்திர)",
+    smartMeterLabel: "ச்மார்ட்மீட்டர் இணைக்கவும் (சிம்)",
+    selected_no: "ஒன்று கட்டணமில்லை.",
+    loadDemo: "டெமோ நுகர்வோர் ஏற்று",
+    submitComplaint: "பதிவுக்குச் சமர்ப்பிக்கவும்",
+    viewComplaints: "என் புகார்கள்",
+    payBtn: "கட்டணம் செலுத்து",
+    downloadBtn: "ரசீது பதிவிறக்கு"
+  },
+  hi: {
+    title: "TNEB ऑनलाइन भुगतान पोर्टल",
+    enter_heading: "कन्ज़्यूमर ID दर्ज करें",
+    complaint_heading: "शिकायत / प्रतिक्रिया",
+    panel_heading: "भुगतान पैनल और डैशबोर्ड",
+    autoPayLabel: "ऑटो पेमेंट सक्षम करें (मासिक)",
+    smartMeterLabel: "स्मार्ट मीटर कनेक्ट करें (सिम)",
+    selected_no: "कोई बिल तैयार नहीं है।",
+    loadDemo: "डेमो ग्राहक लोड करें",
+    submitComplaint: "शिकायत दर्ज करें",
+    viewComplaints: "मेरी शिकायतें देखें",
+    payBtn: "बिल भुगतान करें",
+    downloadBtn: "रसीद डाउनलोड करें"
+  }
 };
 
-let currentBill=null;
-const consumerInput=document.getElementById("consumerInput");
-const consumerName=document.getElementById("consumerName");
-const consumerPhone=document.getElementById("consumerPhone");
-const consumerAddress=document.getElementById("consumerAddress");
-const prevReading=document.getElementById("prevReading");
-const curReading=document.getElementById("curReading");
-const detailsSection=document.getElementById("detailsSection");
-const resultsEl=document.getElementById("results");
-const selectedInfo=document.getElementById("selectedInfo");
-const payBtn=document.getElementById("payBtn");
-const downloadBtn=document.getElementById("downloadBtn");
-const receiptWrap=document.getElementById("receiptWrap");
+const DEMO_CONSUMERS = {
+  "10020130": { name:"Siddharth", phone:"9876543210", address:"Anna Nagar, Chennai, TN", prev:350, cur:420, schemes:{senior:false, solar:true} },
+  "10020131": { name:"Kesav", phone:"9123456780", address:"Thandayarpettai, Chennai, TN", prev:480, cur:560, schemes:{senior:true, solar:false} },
+  "10020132": { name:"Subash", phone:"9001122334", address:"Kanchipuram, TN", prev:290, cur:365, schemes:{senior:false, solar:false} },
+  "10020133": { name:"Praveen", phone:"9988776655", address:"Poonamallee, TN", prev:400, cur:480, schemes:{senior:false, solar:true} }
+};
 
 const SLABS=[{upto:100,rate:3.50},{upto:200,rate:4.50},{upto:500,rate:6.00},{upto:Infinity,rate:7.50}];
 
-// Enter button
-document.getElementById("enterBtn").addEventListener("click",()=>{
-  const id=consumerInput.value.trim();
-  const c=DEMO_CONSUMERS[id];
-  if(c){
-    detailsSection.classList.remove("hidden");
-    consumerName.value=c.name;
-    consumerPhone.value=c.phone;
-    consumerAddress.value=c.address;
-    prevReading.value=c.prev;
-    curReading.value=c.cur;
-    resultsEl.innerHTML="";
-    selectedInfo.textContent="Consumer details loaded.";
-  } else{
-    alert("Consumer ID not found!");
-    detailsSection.classList.add("hidden");
-  }
-});
-consumerInput.addEventListener("keypress",function(e){if(e.key==="Enter"){document.getElementById("enterBtn").click();}});
+let currentBill = null;
+let usageHistory = {}; // store per consumer 6 months usage
+let smartMeterInterval = null;
 
-// Calculate bill
-function calcBill(units){
-  let remaining=units,total=0,lower=0,breakdown=[];
-  for(let s of SLABS){
-    let limit=s.upto-lower;
-    let used=Math.min(remaining,limit);
-    if(used>0){
-      let amt=used*s.rate;
-      breakdown.push({slab:`${lower+1}-${s.upto}`,units:used,rate:s.rate,amount:amt});
-      total+=amt;
-      remaining-=used;
+/* --------------------------- ELEMENTS --------------------------- */
+const langSelect = document.getElementById('langSelect');
+const selectedInfo = document.getElementById('selectedInfo');
+const enterBtn = document.getElementById('enterBtn');
+const loadDemo = document.getElementById('loadDemo');
+const consumerInput = document.getElementById('consumerInput');
+const consumerName = document.getElementById('consumerName');
+const consumerPhone = document.getElementById('consumerPhone');
+const consumerAddress = document.getElementById('consumerAddress');
+const prevReading = document.getElementById('prevReading');
+const curReading = document.getElementById('curReading');
+const detailsSection = document.getElementById('detailsSection');
+const resultsEl = document.getElementById('results');
+const generateBtn = document.getElementById('generateBtn');
+const smartMeterChk = document.getElementById('smartMeterChk');
+const smartMeterLabel = document.getElementById('smartMeterLabel');
+
+const autoPayChk = document.getElementById('autoPayChk');
+const methodSelect = document.getElementById('methodSelect');
+const payBtn = document.getElementById('payBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const receiptWrap = document.getElementById('receiptWrap');
+const widgetDue = document.getElementById('widgetDue');
+const widgetPoints = document.getElementById('widgetPoints');
+const widgetSchemes = document.getElementById('widgetSchemes');
+const notifications = document.getElementById('notifications');
+const usageChart = document.getElementById('usageChart');
+
+const complaintType = document.getElementById('complaintType');
+const complaintText = document.getElementById('complaintText');
+const submitComplaint = document.getElementById('submitComplaint');
+const viewComplaints = document.getElementById('viewComplaints');
+const complaintList = document.getElementById('complaintList');
+const clearStorage = document.getElementById('clearStorage');
+
+const titleEl = document.getElementById('title');
+const enterHeading = document.getElementById('enter_heading');
+const complaintHeading = document.getElementById('complaint_heading');
+const panelHeading = document.getElementById('panel_heading');
+const autoPayLabelEl = document.getElementById('autoPayLabel');
+const loadDemoBtnText = loadDemo;
+
+/* --------------------------- LANGUAGE HANDLING --------------------------- */
+function applyLanguage(lang){
+  const t = translations[lang] || translations.en;
+  titleEl.textContent = t.title;
+  enterHeading.textContent = t.enter_heading;
+  complaintHeading.textContent = t.complaint_heading;
+  panelHeading.textContent = t.panel_heading;
+  autoPayLabelEl.textContent = t.autoPayLabel;
+  smartMeterLabel.textContent = t.smartMeterLabel;
+  selectedInfo.textContent = currentBill ? selectedInfo.textContent : t.selected_no;
+  enterBtn.textContent = "Enter";
+  loadDemo.textContent = t.loadDemo;
+  submitComplaint.textContent = t.submitComplaint;
+  viewComplaints.textContent = t.viewComplaints;
+  payBtn.textContent = t.payBtn;
+  downloadBtn.textContent = t.downloadBtn;
+}
+langSelect.addEventListener('change', ()=> applyLanguage(langSelect.value));
+applyLanguage('en');
+
+/* --------------------------- UTILITIES --------------------------- */
+function notify(msg){
+  const d = document.createElement('div');
+  d.className = 'note';
+  d.textContent = msg;
+  notifications.prepend(d);
+  // keep only recent 20
+  while(notifications.children.length>20) notifications.removeChild(notifications.lastChild);
+}
+function saveToLocal(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+function loadFromLocal(key, fallback){ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+
+/* --------------------------- USAGE HISTORY & GREEN POINTS --------------------------- */
+function initDemoStorage(){
+  const pts = loadFromLocal('green_points', {});
+  const history = loadFromLocal('usage_history', {});
+  usageHistory = history;
+  // ensure each demo consumer has some past usage if missing
+  Object.keys(DEMO_CONSUMERS).forEach(id=>{
+    if(!usageHistory[id]) {
+      // create 6 months random-ish history near current consumption
+      const cur = DEMO_CONSUMERS[id].cur;
+      const base = Math.max(60, Math.round(cur*0.9/ (cur-DEMO_CONSUMERS[id].prev || 1) * (cur-DEMO_CONSUMERS[id].prev?1:1) ));
+      usageHistory[id] = Array.from({length:6}, (_,i)=> Math.max(20, Math.round((cur-DEMO_CONSUMERS[id].prev)*0.7 + Math.random()*80)));
     }
-    lower=s.upto;
+    if(!pts[id]) pts[id] = 0;
+  });
+  saveToLocal('green_points', pts);
+  saveToLocal('usage_history', usageHistory);
+}
+initDemoStorage();
+
+/* --------------------------- BILL CALCULATION --------------------------- */
+function calcBill(units){
+  let remaining = units, total = 0, lower = 0, breakdown = [];
+  for(let s of SLABS){
+    let limit = s.upto - lower;
+    let used = Math.min(remaining, limit);
+    if(used>0){
+      let amt = used * s.rate;
+      breakdown.push({slab: `${lower+1}-${s.upto}`, units: used, rate: s.rate, amount: amt});
+      total += amt;
+      remaining -= used;
+    }
+    lower = s.upto;
     if(remaining<=0) break;
   }
-  return {total,breakdown};
+  return { total, breakdown };
 }
 
-// Generate bill
-document.getElementById("generateBtn").addEventListener("click",()=>{
-  const id=consumerInput.value.trim();
-  const name=consumerName.value, phone=consumerPhone.value, address=consumerAddress.value;
-  const prev=parseFloat(prevReading.value), cur=parseFloat(curReading.value);
-  if(!id||!name||!phone||!address||isNaN(prev)||isNaN(cur)){resultsEl.innerHTML="<p style='color:red;'>Please enter valid data.</p>"; return;}
-  if(cur<prev){resultsEl.innerHTML="<p style='color:red;'>Current reading cannot be less than previous.</p>"; return;}
-  const units=cur-prev;
-  const {total,breakdown}=calcBill(units);
-  let table=`<table><thead><tr><th>Slab</th><th>Units</th><th>Rate</th><th>Amount</th></tr></thead><tbody>`;
-  breakdown.forEach(b=>{table+=`<tr><td>${b.slab}</td><td>${b.units}</td><td>₹${b.rate.toFixed(2)}</td><td>₹${b.amount.toFixed(2)}</td></tr>`});
-  table+=`</tbody></table><p><b>Total Bill: ₹${total.toFixed(2)}</b></p><p>Units Consumed: ${units}</p>`;
-  resultsEl.innerHTML=table;
-  currentBill={id,name,phone,address,prev,cur,units,total,breakdown};
-  selectedInfo.textContent=`Bill ready for ${name} (${id}) — ${units} units, ₹${total.toFixed(2)}`;
-  payBtn.disabled=false; downloadBtn.disabled=false;
+/* --------------------------- ENTER / LOAD DEMO --------------------------- */
+enterBtn.addEventListener('click', ()=> loadConsumer(consumerInput.value.trim()));
+loadDemo.addEventListener('click', ()=>{
+  // load first demo id
+  const id = Object.keys(DEMO_CONSUMERS)[0];
+  consumerInput.value = id;
+  loadConsumer(id);
 });
 
-// Pay bill
-payBtn.addEventListener("click",()=>{
+function loadConsumer(id){
+  const c = DEMO_CONSUMERS[id];
+  if(!c){ alert("Consumer ID not found!"); detailsSection.style.display='none'; return; }
+  detailsSection.style.display='flex';
+  consumerName.value = c.name;
+  consumerPhone.value = c.phone;
+  consumerAddress.value = c.address;
+  prevReading.value = c.prev;
+  curReading.value = c.cur;
+  resultsEl.innerHTML = '';
+  currentBill = null;
+  selectedInfo.textContent = `Consumer details loaded (${id})`;
+  payBtn.disabled = true; downloadBtn.disabled = true;
+  // show schemes
+  const schemeList = [];
+  if(c.schemes.senior) schemeList.push('Senior');
+  if(c.schemes.solar) schemeList.push('Solar User');
+  widgetSchemes.textContent = schemeList.length ? schemeList.join(', ') : '—';
+  widgetDue.textContent = '₹0.00';
+  // render chart and points
+  renderUsageChartFor(id);
+  updatePointsUI(id);
+}
+
+/* --------------------------- SMART METER SIM (REAL-TIME) --------------------------- */
+smartMeterChk.addEventListener('change', ()=>{
+  if(!consumerInput.value.trim()){ smartMeterChk.checked=false; alert('Load consumer first.'); return; }
+  if(smartMeterChk.checked) startSmartMeterSim(consumerInput.value.trim());
+  else stopSmartMeterSim();
+});
+
+function startSmartMeterSim(id){
+  notify('Smart meter connected — Real-time updates enabled.');
+  // increment current reading every 4 seconds to simulate live read
+  stopSmartMeterSim();
+  smartMeterInterval = setInterval(()=>{
+    // small increment
+    const inc = Math.round(1 + Math.random()*3);
+    const cur = parseInt(curReading.value || 0) + inc;
+    curReading.value = cur;
+    // auto refresh bill preview if generated
+    if(currentBill && currentBill.id === id){
+      // regenerate bill preview in-place without pushing payment
+      simulateGenerateWithoutChangingState();
+      notify('Smart meter: reading updated → ' + cur + ' units reading.');
+    }
+  }, 4000);
+}
+function stopSmartMeterSim(){
+  if(smartMeterInterval) { clearInterval(smartMeterInterval); smartMeterInterval = null; notify('Smart meter disconnected.'); }
+}
+
+/* --------------------------- GENERATE BILL --------------------------- */
+function simulateGenerateWithoutChangingState(){
+  // re-calc based on current inputs, but keep currentBill object same id (for demo)
+  const prev = parseFloat(prevReading.value), cur = parseFloat(curReading.value);
+  if(isNaN(prev) || isNaN(cur) || cur < prev) return;
+  const units = cur - prev;
+  const { total, breakdown } = calcBill(units);
+  // apply scheme discounts
+  const c = DEMO_CONSUMERS[consumerInput.value.trim()] || {};
+  let discount = 0;
+  if(c.schemes && c.schemes.senior) { discount += 0.05 * total; } // 5% discount
+  if(c.schemes && c.schemes.solar) { discount += 0.03 * total; } // 3% solar rebate
+  const finalTotal = Math.max(0, total - discount);
+  // update temporary display
+  let table = `<table><thead><tr><th>Slab</th><th>Units</th><th>Rate</th><th>Amount</th></tr></thead><tbody>`;
+  breakdown.forEach(b => table += `<tr><td>${b.slab}</td><td>${b.units}</td><td>₹${b.rate.toFixed(2)}</td><td>₹${b.amount.toFixed(2)}</td></tr>`);
+  table += `</tbody></table><p><b>Subtotal: ₹${total.toFixed(2)}</b></p>`;
+  if(discount>0) table += `<p class="small">Scheme Discount: -₹${discount.toFixed(2)}</p>`;
+  table += `<p><b>Total Bill: ₹${finalTotal.toFixed(2)}</b></p><p>Units Consumed: ${units}</p>`;
+  resultsEl.innerHTML = table;
+  widgetDue.textContent = `₹${finalTotal.toFixed(2)}`;
+}
+
+/* real generate that sets currentBill and enables pay */
+generateBtn.addEventListener('click', ()=>{
+  const id = consumerInput.value.trim();
+  const c = DEMO_CONSUMERS[id];
+  if(!c){ resultsEl.innerHTML = "<p style='color:red;'>Please load a valid consumer.</p>"; return; }
+  const prev = parseFloat(prevReading.value), cur = parseFloat(curReading.value);
+  if(isNaN(prev) || isNaN(cur)){ resultsEl.innerHTML = "<p style='color:red;'>Please enter valid readings.</p>"; return; }
+  if(cur < prev){ resultsEl.innerHTML = "<p style='color:red;'>Current reading cannot be less than previous.</p>"; return; }
+  const units = cur - prev;
+  const { total, breakdown } = calcBill(units);
+  // apply scheme discounts
+  let discount = 0;
+  if(c.schemes && c.schemes.senior) { discount += 0.05 * total; }
+  if(c.schemes && c.schemes.solar) { discount += 0.03 * total; }
+  const finalTotal = Math.max(0, total - discount);
+  // build table
+  let table = `<table><thead><tr><th>Slab</th><th>Units</th><th>Rate</th><th>Amount</th></tr></thead><tbody>`;
+  breakdown.forEach(b => table += `<tr><td>${b.slab}</td><td>${b.units}</td><td>₹${b.rate.toFixed(2)}</td><td>₹${b.amount.toFixed(2)}</td></tr>`);
+  table += `</tbody></table><p><b>Subtotal: ₹${total.toFixed(2)}</b></p>`;
+  if(discount>0) table += `<p class="small">Scheme Discount Applied: -₹${discount.toFixed(2)}</p>`;
+  table += `<p><b>Total Bill: ₹${finalTotal.toFixed(2)}</b></p><p>Units Consumed: ${units}</p>`;
+  resultsEl.innerHTML = table;
+
+  currentBill = { id, name: c.name, phone: c.phone, address: c.address, prev, cur, units, subtotal: total, discount, total: finalTotal, breakdown, schemes: c.schemes };
+  selectedInfo.textContent = `Bill ready for ${c.name} (${id}) — ${units} units, ₹${finalTotal.toFixed(2)}`;
+  payBtn.disabled = false; downloadBtn.disabled = false;
+  widgetDue.textContent = `₹${finalTotal.toFixed(2)}`;
+  notify(`Bill generated for ${c.name}: ₹${finalTotal.toFixed(2)}.`);
+
+  // auto pay if enabled
+  if(autoPayChk.checked){
+    setTimeout(()=> { processPayment(true); }, 800);
+  }
+});
+
+/* --------------------------- PAYMENT & RECEIPT --------------------------- */
+function processPayment(auto=false){
   if(!currentBill) return;
-  let receiptText=
+  // create receipt text
+  const r = currentBill;
+  const receiptText =
 `RECEIPT
 -------------------------
-Consumer ID: ${currentBill.id}
-Name: ${currentBill.name}
-Phone: ${currentBill.phone}
-Address: ${currentBill.address}
-Previous Reading: ${currentBill.prev}
-Current Reading: ${currentBill.cur}
-Units Consumed: ${currentBill.units}
+Consumer ID: ${r.id}
+Name: ${r.name}
+Phone: ${r.phone}
+Address: ${r.address}
+Previous Reading: ${r.prev}
+Current Reading: ${r.cur}
+Units Consumed: ${r.units}
 -------------------------
-Total Amount: ₹${currentBill.total.toFixed(2)}
-Status: Paid
+Subtotal: ₹${r.subtotal.toFixed(2)}
+Discount: -₹${r.discount.toFixed(2)}
+Total Amount: ₹${r.total.toFixed(2)}
+Status: Paid (${auto ? "Auto Payment" : "Manual"})
 -------------------------
 Thank you for your payment!`;
-  receiptWrap.innerHTML=`<pre class='receipt'>${receiptText}</pre>`;
-});
+  receiptWrap.innerHTML = `<pre class="receipt">${receiptText}</pre>`;
+  selectedInfo.textContent = auto ? "✅ Auto Payment Successful — Bill Paid Automatically" : "✅ Manual Payment Successful";
+  notify(`${auto ? 'Auto' : 'Manual'} payment successful for ${r.id}: ₹${r.total.toFixed(2)}`);
 
-// Download PDF
-downloadBtn.addEventListener("click",()=>{
+  // reward points: simple rule - 1 point per ₹50 paid
+  const pts = loadFromLocal('green_points', {});
+  const curPts = pts[r.id] || 0;
+  const earned = Math.floor(r.total / 50);
+  pts[r.id] = curPts + earned;
+  saveToLocal('green_points', pts);
+  updatePointsUI(r.id);
+
+  // update usage history (push this months usage)
+  const hist = loadFromLocal('usage_history', {});
+  hist[r.id] = hist[r.id] || [];
+  hist[r.id].push(r.units);
+  if(hist[r.id].length>6) hist[r.id].shift();
+  saveToLocal('usage_history', hist);
+  renderUsageChartFor(r.id);
+
+  // if auto, we simulate marking prev to current for next cycle
+  DEMO_CONSUMERS[r.id].prev = r.cur;
+}
+
+/* manual button */
+payBtn.addEventListener('click', ()=> processPayment(false));
+
+/* download PDF */
+downloadBtn.addEventListener('click', ()=>{
   if(!currentBill) return;
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  let y = 20;
+  let y = 18;
   doc.setFontSize(14);
-  doc.text("TAMIL NADU ELECTRICITY BOARD - RECEIPT", 20, y);
-  y += 10;
+  doc.text("TAMIL NADU ELECTRICITY BOARD - RECEIPT", 14, y);
+  y += 8;
   doc.setFontSize(11);
   const lines = [
     `Consumer ID: ${currentBill.id}`,
@@ -267,14 +552,129 @@ downloadBtn.addEventListener("click",()=>{
   currentBill.breakdown.forEach(b=>{
     lines.push(`${b.slab}: ${b.units} units x ₹${b.rate.toFixed(2)} = ₹${b.amount.toFixed(2)}`);
   });
-  lines.push(``);
+  lines.push('');
+  lines.push(`Subtotal: ₹${currentBill.subtotal.toFixed(2)}`);
+  lines.push(`Discount: -₹${currentBill.discount.toFixed(2)}`);
   lines.push(`Total Amount: ₹${currentBill.total.toFixed(2)}`);
   lines.push(`Status: Paid`);
-  lines.push(``);
-  lines.push(`Thank you for your payment!`);
-  lines.forEach(line=>{ y += 8; doc.text(line,20,y); });
+  lines.push('');
+  lines.push('Thank you for your payment!');
+  lines.forEach(line => { y += 7; doc.text(line, 14, y); });
   doc.save(`TNEB_Receipt_${currentBill.id}.pdf`);
 });
+
+/* --------------------------- GREEN POINTS UI --------------------------- */
+function updatePointsUI(id){
+  const pts = loadFromLocal('green_points', {});
+  widgetPoints.textContent = (pts[id] || 0) + ' pts';
+}
+
+/* --------------------------- USAGE CHART (simple canvas bars) --------------------------- */
+function renderUsageChartFor(id){
+  const hist = loadFromLocal('usage_history', {});
+  const arr = hist[id] || [50,60,55,70,65,80];
+  const ctx = usageChart.getContext('2d');
+  usageChart.width = usageChart.clientWidth;
+  usageChart.height = usageChart.clientHeight;
+  // clear
+  ctx.clearRect(0,0,usageChart.width, usageChart.height);
+  // draw simple bars
+  const w = usageChart.width, h = usageChart.height;
+  const padding = 20;
+  const maxVal = Math.max(...arr, 100);
+  const barW = (w - padding*2) / arr.length * 0.7;
+  arr.forEach((v,i)=>{
+    const x = padding + i * ((w - padding*2)/arr.length) + ((w - padding*2)/arr.length - barW)/2;
+    const barH = (v / maxVal) * (h - padding*2);
+    ctx.fillStyle = '#0066cc';
+    ctx.fillRect(x, h - padding - barH, barW, barH);
+    ctx.fillStyle = '#1b2a4a';
+    ctx.font = '11px Roboto';
+    ctx.fillText(v + 'u', x, h - padding - barH - 6);
+  });
+}
+
+/* --------------------------- COMPLAINT / FEEDBACK --------------------------- */
+submitComplaint.addEventListener('click', ()=>{
+  const id = consumerInput.value.trim();
+  if(!id){ alert('Load consumer first.'); return; }
+  const type = complaintType.value;
+  const text = complaintText.value.trim();
+  if(!text){ alert('Please describe the issue.'); return; }
+  const comp = {
+    id,
+    type,
+    text,
+    date: new Date().toISOString(),
+    status: 'open',
+    ticket: 'TKT' + Math.floor(Math.random()*90000+10000)
+  };
+  const arr = loadFromLocal('complaints', []);
+  arr.unshift(comp);
+  saveToLocal('complaints', arr);
+  complaintText.value = '';
+  notify(`Complaint registered (${comp.ticket}).`);
+  alert(`Complaint submitted. Ticket: ${comp.ticket}`);
+});
+
+viewComplaints.addEventListener('click', ()=>{
+  const id = consumerInput.value.trim();
+  const arr = loadFromLocal('complaints', []);
+  const mine = arr.filter(c => c.id === id);
+  if(mine.length===0){ complaintList.style.display='block'; complaintList.innerHTML = '<div class="small">No complaints found for this consumer.</div>'; return; }
+  complaintList.style.display='block';
+  complaintList.innerHTML = '';
+  mine.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'complaint-row';
+    div.innerHTML = `<div style="flex:1;"><b>${c.type}</b><div class="small">${new Date(c.date).toLocaleString()}</div><div class="small">${c.text}</div></div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+      <div class="badge ${c.status==='open'?'status-open':'status-closed'}">${c.status.toUpperCase()}</div>
+      <div class="small">Ticket: ${c.ticket}</div>
+    </div>`;
+    complaintList.appendChild(div);
+  });
+});
+
+/* --------------------------- NOTIFICATIONS PERSISTENCE --------------------------- */
+function addSystemNotification(msg){
+  notify(msg);
+  // optionally store system notifications in localStorage if needed
+}
+
+/* --------------------------- CLEAR STORAGE (demo) --------------------------- */
+clearStorage.addEventListener('click', ()=>{
+  if(!confirm('Clear demo data (green points, usage, complaints)?')) return;
+  localStorage.removeItem('green_points');
+  localStorage.removeItem('usage_history');
+  localStorage.removeItem('complaints');
+  initDemoStorage();
+  complaintList.innerHTML = '';
+  notify('Demo data cleared.');
+  location.reload();
+});
+
+/* --------------------------- INITIAL STATE --------------------------- */
+applyLanguage('en');
+renderUsageChartFor(Object.keys(DEMO_CONSUMERS)[0]);
+
+/* ensure UI updates when currentBill changes */
+function updateUIAfterLoad(id){
+  renderUsageChartFor(id);
+  updatePointsUI(id);
+  widgetDue.textContent = '₹0.00';
+}
+
+/* keyboard enter key */
+consumerInput.addEventListener('keypress', function(e){ if(e.key==='Enter') enterBtn.click(); });
+
+/* make sure to stop smart meter when leaving page */
+window.addEventListener('beforeunload', ()=> stopSmartMeterSim());
+
+/* small helper to show persisted notifications count when load */
+const existingComplaints = loadFromLocal('complaints', []);
+if(existingComplaints.length>0) notify(`You have ${existingComplaints.length} stored complaint(s).`);
+
 </script>
 
 </body>
